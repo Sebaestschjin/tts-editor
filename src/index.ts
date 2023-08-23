@@ -1,6 +1,8 @@
 import Emittery from 'emittery';
 import { AddressInfo, Server, Socket } from 'net';
 
+let returnId = 0;
+
 export interface Options {
   clientPort?: number;
   serverPort?: number;
@@ -90,6 +92,7 @@ export interface SendCustomMessage extends JsonMessage<2> {
 export interface ExecuteLuaCode extends JsonMessage<3> {
   guid: string;
   script: string;
+  returnID: number;
 }
 
 /**
@@ -157,6 +160,7 @@ export interface CustomMessage extends JsonMessage<4> {
  */
 export interface ReturnMessage extends JsonMessage<5> {
   returnValue: unknown;
+  returnID: number;
 }
 
 /**
@@ -359,10 +363,12 @@ export default class ExternalEditorApi extends Emittery.Typed<
    * @see https://api.tabletopsimulator.com/externaleditorapi/#execute-lua-code
    */
   public async executeLuaCode(script: string, guid = '-1'): Promise<void> {
+    const id = returnId++;
     const message: ExecuteLuaCode = {
       messageID: 3,
       script,
       guid,
+      returnID: id,
     };
     return this.send(message);
   }
@@ -523,10 +529,11 @@ export class TTSApiBackend extends Emittery.Typed<
     return this.send(message);
   }
 
-  public returnMessage(returnValue: unknown): Promise<void> {
+  public returnMessage(returnValue: unknown, id: number): Promise<void> {
     const message: ReturnMessage = {
       messageID: 5,
       returnValue,
+      returnID: id,
     };
     return this.send(message);
   }
