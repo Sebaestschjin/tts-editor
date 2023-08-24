@@ -15,6 +15,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.TTSApiBackend = void 0;
 const emittery_1 = __importDefault(require("emittery"));
 const net_1 = require("net");
+let returnId = 0;
 /**
  * Implements https://api.tabletopsimulator.com/externaleditorapi.
  */
@@ -41,7 +42,13 @@ class ExternalEditorApi extends emittery_1.default.Typed {
                     resolve(undefined);
                 }
                 this.server.on('connection', (socket) => {
-                    socket.on('data', this.onDataReceived.bind(this));
+                    const chunks = [];
+                    socket.on('data', (data) => {
+                        chunks.push(data);
+                    });
+                    socket.on('end', () => {
+                        this.onDataReceived(Buffer.concat(chunks).toString('utf-8'));
+                    });
                 });
             });
         });
@@ -55,7 +62,7 @@ class ExternalEditorApi extends emittery_1.default.Typed {
         this.server.close();
     }
     onDataReceived(data) {
-        const message = JSON.parse(data.toString('utf8'));
+        const message = JSON.parse(data);
         switch (message.messageID) {
             case 0:
                 this.emit('pushingNewObject', message);
@@ -154,10 +161,12 @@ class ExternalEditorApi extends emittery_1.default.Typed {
      */
     executeLuaCode(script, guid = '-1') {
         return __awaiter(this, void 0, void 0, function* () {
+            const id = returnId++;
             const message = {
                 messageID: 3,
                 script,
                 guid,
+                returnID: id,
             };
             return this.send(message);
         });
@@ -288,10 +297,11 @@ class TTSApiBackend extends emittery_1.default.Typed {
         };
         return this.send(message);
     }
-    returnMessage(returnValue) {
+    returnMessage(returnValue, id) {
         const message = {
             messageID: 5,
             returnValue,
+            returnID: id,
         };
         return this.send(message);
     }

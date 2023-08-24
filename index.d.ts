@@ -78,6 +78,7 @@ export interface SendCustomMessage extends JsonMessage<2> {
 export interface ExecuteLuaCode extends JsonMessage<3> {
     guid: string;
     script: string;
+    returnID: number;
 }
 /**
  * When an object is right clicked (contextual menu) -> `Scripting Editor`.
@@ -137,6 +138,7 @@ export interface CustomMessage extends JsonMessage<4> {
  */
 export interface ReturnMessage extends JsonMessage<5> {
     returnValue: unknown;
+    returnID: number;
 }
 /**
  * Occurs whenever the game was saved.
@@ -245,7 +247,7 @@ export declare class TTSApiBackend extends Emittery.Typed<{
     printDebugMessage(text: string): Promise<void>;
     errorMessage(error: string, errorMessagePrefix: string, guid?: string): Promise<void>;
     customMessage(customMessage: unknown): Promise<void>;
-    returnMessage(returnValue: unknown): Promise<void>;
+    returnMessage(returnValue: unknown, id: number): Promise<void>;
     gameSaved(): Promise<void>;
     objectCreated(guid: string): Promise<void>;
 }
